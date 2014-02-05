@@ -100,20 +100,12 @@ getText parent childName =
       let [XML.Text content] = XML.elContent child in
        XML.cdData content
 
-getStatus :: XML.Element -> String
-getStatus xml =
-  let st = XML.findChildren (XML.unqual "status") xml in
-  getText (head st) "status"
+type Result = (String, String, String)
 
-getTime :: XML.Element -> String
-getTime xml =
-  let st = XML.findChildren (XML.unqual "status") xml in
-  getText (head st) "cputime"
-
-getMemory :: XML.Element -> String
-getMemory xml =
-  let st = XML.findChildren (XML.unqual "status") xml in
-  getText (head st) "memory"
+getResult :: [XML.Element] -> Result
+getResult elem =
+  (f "status", f "cputime", f "memory")
+  where f attr = getText (head elem) attr
 
 fetch :: String -> String -> IO (Maybe (String, String, String))
 fetch user pid = do
@@ -129,7 +121,7 @@ fetch user pid = do
         case xml_ of
           Nothing -> aux (cnt+1)
           Just xml -> do
-            let st = getStatus xml
+            let (st, time, mem) = getResult $ XML.findChildren (XML.unqual "status") xml
             if st /= "Running"
-              then return $ Just (st, getTime xml, getMemory xml)
+              then return $ Just (st, time, mem)
               else aux (cnt+1)
