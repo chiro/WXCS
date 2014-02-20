@@ -16,26 +16,38 @@ data AojConf = AojConf {
   pass :: String
   } deriving (Eq, Show)
 
+data ProxyConf = ProxyConf {
+  proxyHost :: Text,
+  proxyPort :: Int
+  } deriving (Eq, Show)
+
 data Configuration = Configuration {
   port :: Int,
   aoj :: AojConf,
-  db :: Text
+  db :: Text,
+  proxy :: Maybe ProxyConf
   } deriving (Eq, Show)
 
 instance Default Configuration where
   def = Configuration {
     port = 16384,
     aoj = AojConf "" "",
-    db = "db.sqlite"
+    db = "db.sqlite",
+    proxy = Nothing
     }
 
 instance AE.ToJSON AojConf where
   toJSON (AojConf user' pass') =
     AE.object ["user" AE..= user', "pass" AE..= pass']
 
+instance AE.ToJSON ProxyConf where
+  toJSON (ProxyConf host' port') =
+    AE.object ["host" AE..= host', "port" AE..= port']
+
 instance AE.ToJSON Configuration where
-  toJSON (Configuration port' aoj' db') =
-    AE.object ["port" AE..= port', "aoj" AE..= aoj', "db" AE..= db']
+  toJSON (Configuration port' aoj' db' proxy') =
+    AE.object ["port" AE..= port', "aoj" AE..= aoj', "db" AE..= db',
+               "proxy" AE..= proxy']
 
 instance AE.FromJSON AojConf where
   parseJSON (AE.Object v) = AojConf <$>
@@ -43,11 +55,18 @@ instance AE.FromJSON AojConf where
                             v AE..: "pass"
   parseJSON _ = empty
 
+instance AE.FromJSON ProxyConf where
+  parseJSON (AE.Object v) = ProxyConf <$>
+                            v AE..: "host" <*>
+                            v AE..: "port"
+  parseJSON _ = empty
+
 instance AE.FromJSON Configuration where
   parseJSON (AE.Object v) = Configuration <$>
                             v AE..: "port" <*>
                             v AE..: "aoj" <*>
-                            v AE..: "db"
+                            v AE..: "db" <*>
+                            v AE..:? "proxy"
   parseJSON _ = empty
 
 loadConfig :: FilePath -> IO (Maybe Configuration)
