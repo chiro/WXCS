@@ -44,7 +44,11 @@ whenDef def p act = if p then act else return def
 runSql :: Sq.SqlPersistT (NoLoggingT (ResourceT IO)) a -> DatabaseT a
 runSql action = do
   (lock, conf) <- ask
-  liftIO $ bracket_ (acquire lock) (release lock) (Sq.runSqlite (db conf) action)
+  case sqlite conf of
+    Nothing -> error "Database is not found!"
+    Just sqliteConf -> do
+      let dbFile = sqliteFile sqliteConf
+      liftIO $ bracket_ (acquire lock) (release lock) (Sq.runSqlite dbFile action)
 
 forkIO_ :: IO () -> IO ()
 forkIO_ a = void $ forkIO a
