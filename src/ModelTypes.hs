@@ -63,3 +63,38 @@ derivePersistField "JudgeType"
 instance ToMarkup ZonedTime where
   toMarkup = toMarkup . showTime
   preEscapedToMarkup = preEscapedToMarkup . showTime
+
+data Languages =
+  C
+  | Cpp
+  | Cpp11
+  | Java
+  | Csharp
+  | D
+  | Ruby
+  | Python
+  | Php
+  | Javascript
+  deriving (Eq, Ord, Enum, Bounded)
+
+instance Show Languages where
+  show C = "C"
+  show Cpp = "C++"
+  show Cpp11 = "C++11"
+  show Java = "JAVA"
+  show Csharp = "C#"
+  show D = "D"
+  show Ruby = "Ruby"
+  show Python = "Python"
+  show Php = "PHP"
+  show Javascript = "JavaScript"
+
+instance Read Languages where
+  readsPrec _ r = case res of
+    Nothing -> [(Cpp, r)] -- default value
+    Just res' -> [res']
+    where res = foldl (\m lang -> case stripPrefix (show lang) r of
+                          Nothing -> m
+                          Just re -> Just (lang, re)) Nothing [C ..]
+
+derivePersistField "Languages"
